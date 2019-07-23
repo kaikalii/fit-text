@@ -183,17 +183,15 @@ impl TextFormat {
 
 /// Defines behavior of a cache of character widths.
 ///
-/// In general, determining the width of a character glyphs with a given font size
-/// is a non-trivial calculation. Caching a width calculation for each characters
+/// In general, determining the width of a character glyph with a given font size
+/// is a non-trivial calculation. Caching a width calculation for each character
 /// and font size ensures that the calculation is only done once for each pair.
 pub trait CharacterWidthCache {
     /// Get the width of a character at a font size
     fn char_width(&mut self, character: char, font_size: u32) -> f64;
     /// Get the width of a string at a font_size
     fn width(&mut self, text: &str, font_size: u32) -> f64 {
-        text.chars()
-            .map(|c| self.char_width(c, font_size))
-            .fold(0.0, std::ops::Add::add)
+        text.chars().map(|c| self.char_width(c, font_size)).sum()
     }
     /// Split a string into a list of lines of text with the given format where no line
     /// is wider than the given max width. Newlines (`\n`) in the string are respected

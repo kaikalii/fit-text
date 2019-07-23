@@ -398,7 +398,7 @@ pub trait CharacterWidthCache {
 
 /// A basic implememntor for `CharacterWidthCache`
 #[derive(Clone)]
-pub struct Glyphs<'f, S = f64>
+pub struct BasicGlyphs<'f, S = f64>
 where
     S: Scalar,
 {
@@ -406,27 +406,27 @@ where
     font: Font<'f>,
 }
 
-impl<'f, S> Glyphs<'f, S>
+impl<'f, S> BasicGlyphs<'f, S>
 where
     S: Scalar,
 {
     /// Loads a `Glyphs` from an array of font data.
-    pub fn from_bytes(bytes: &'f [u8]) -> Result<Glyphs<'f, S>, Error> {
-        Ok(Glyphs {
+    pub fn from_bytes(bytes: &'f [u8]) -> Result<BasicGlyphs<'f, S>, Error> {
+        Ok(BasicGlyphs {
             widths: HashMap::new(),
             font: Font::from_bytes(bytes)?,
         })
     }
     /// Loads a `Glyphs` from a `Font`.
-    pub fn from_font(font: Font<'f>) -> Glyphs<'f, S> {
-        Glyphs {
+    pub fn from_font(font: Font<'f>) -> BasicGlyphs<'f, S> {
+        BasicGlyphs {
             widths: HashMap::new(),
             font,
         }
     }
 }
 
-impl<'f> CharacterWidthCache for Glyphs<'f> {
+impl<'f> CharacterWidthCache for BasicGlyphs<'f> {
     fn char_width(&mut self, character: char, font_size: u32) -> f64 {
         let font = &self.font;
         *self

@@ -31,6 +31,12 @@ pub enum Justification {
     Right,
 }
 
+impl Default for Justification {
+    fn default() -> Self {
+        Justification::Left
+    }
+}
+
 /// Lines that have starting positions
 ///
 /// `V` usually implements `Vector2`
@@ -47,6 +53,12 @@ pub enum Resize {
     Max,
     /// Do not resize the text
     None,
+}
+
+impl Default for Resize {
+    fn default() -> Self {
+        Resize::NoLarger
+    }
 }
 
 /// A format for some text

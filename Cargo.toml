@@ -1,0 +1,33 @@
+[dependencies]
+rusttype = '0.7.7'
+vector2math = '0.5.0'
+
+[dependencies.piston2d-graphics]
+optional = true
+version = '0.33.0'
+
+[features]
+default = ['graphics']
+graphics = ['piston2d-graphics']
+
+[package]
+authors = ['Kai Schmidt <kaikaliischmidt@gmail.com>']
+categories = [
+    'gui',
+    'rendering',
+]
+description = 'Fit text inside a rectangle'
+documentation = 'https://docs.rs/pane/'
+edition = '2018'
+keywords = [
+    'text',
+    'align',
+    'render',
+    'font',
+    'word',
+]
+license = 'MIT'
+name = 'fit_text'
+readme = 'readme.md'
+repository = 'https://github.com/kaikalii/fit-text'
+version = '0.1.0'

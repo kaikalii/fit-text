@@ -109,60 +109,75 @@ impl TextFormat {
             .expect("fit-text default TextFormat thread panicked") = *self;
     }
     /// Align the `TextFormat` to the left
-    pub fn left(mut self) -> Self {
-        self.just = Justification::Left;
-        self
+    pub fn left(self) -> Self {
+        TextFormat {
+            just: Justification::Left,
+            ..self
+        }
     }
     /// Center-align the `TextFormat`
-    pub fn centered(mut self) -> Self {
-        self.just = Justification::Centered;
-        self
+    pub fn centered(self) -> Self {
+        TextFormat {
+            just: Justification::Centered,
+            ..self
+        }
     }
     /// Align the `TextFormat` to the right
-    pub fn right(mut self) -> Self {
-        self.just = Justification::Right;
-        self
+    pub fn right(self) -> Self {
+        TextFormat {
+            just: Justification::Right,
+            ..self
+        }
+    }
+    /// Set the `Justification`
+    pub fn justify(self, just: Justification) -> Self {
+        TextFormat { just, ..self }
     }
     /// Set the font size
-    pub fn font_size(mut self, font_size: u32) -> Self {
-        self.font_size = font_size;
-        self
+    pub fn font_size(self, font_size: u32) -> Self {
+        TextFormat { font_size, ..self }
     }
     /// Set the line spacing
-    pub fn line_spacing(mut self, line_spacing: f64) -> Self {
-        self.line_spacing = line_spacing;
-        self
+    pub fn line_spacing(self, line_spacing: f64) -> Self {
+        TextFormat {
+            line_spacing,
+            ..self
+        }
     }
     /// Set the indentation of the first line
-    pub fn first_line_indent(mut self, first_line_indent: usize) -> Self {
-        self.first_line_indent = first_line_indent;
-        self
+    pub fn first_line_indent(self, first_line_indent: usize) -> Self {
+        TextFormat {
+            first_line_indent,
+            ..self
+        }
     }
     /// Set the indentation of all lines after the first
-    pub fn lines_indent(mut self, lines_indent: usize) -> Self {
-        self.lines_indent = lines_indent;
-        self
+    pub fn lines_indent(self, lines_indent: usize) -> Self {
+        TextFormat {
+            lines_indent,
+            ..self
+        }
     }
     /// Set the color
-    pub fn color(mut self, color: Color) -> Self {
-        self.color = color;
-        self
+    pub fn color(self, color: Color) -> Self {
+        TextFormat { color, ..self }
     }
     /// Set the resize strategy
-    pub fn resize(mut self, resize: Resize) -> Self {
-        self.resize = resize;
-        self
+    pub fn resize(self, resize: Resize) -> Self {
+        TextFormat { resize, ..self }
     }
     /// Change the font size depending on the the resize strategy
     ///
     /// The given max size is not used if the strategy is `Resize::None`
-    pub fn resize_font(mut self, max_size: u32) -> Self {
-        match self.resize {
-            Resize::NoLarger => self.font_size = self.font_size.min(max_size),
-            Resize::Max => self.font_size = max_size,
-            Resize::None => (),
+    pub fn resize_font(self, max_size: u32) -> Self {
+        TextFormat {
+            font_size: match self.resize {
+                Resize::NoLarger => self.font_size.min(max_size),
+                Resize::Max => max_size,
+                Resize::None => self.font_size,
+            },
+            ..self
         }
-        self
     }
 }
 
@@ -503,7 +518,7 @@ where
     C: CharacterCache,
     G: Graphics<Texture = C::Texture>,
 {
-    /// Write some text into a rectangle with the scribe
+    /// Write some text into a rectangle with the `Scribe`
     pub fn write<S, R>(&mut self, text: S, rectangle: R) -> Result<(), C::Error>
     where
         S: AsRef<str>,

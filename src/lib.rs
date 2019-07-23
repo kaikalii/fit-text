@@ -18,6 +18,8 @@ use once_cell::sync::Lazy;
 use rusttype::{Error, Font, GlyphId, Scale};
 use vector2math::*;
 
+use crate::color::Color;
+
 /// A horizantal text justification
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Justification {
@@ -565,5 +567,3 @@ pub mod color {
     /// Transparent
     pub const TRANSPARENT: Color = [0.0; 4];
 }
-
-pub use self::color::Color;

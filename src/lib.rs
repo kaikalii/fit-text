@@ -11,9 +11,7 @@ text with the [`piston2d-graphics`](https://docs.rs/piston2d-graphics) crate.
 use std::{collections::HashMap, sync::Mutex};
 
 #[cfg(feature = "graphics")]
-use graphics::{
-    character::CharacterCache, math::Matrix2d, text as draw_text, Graphics, ImageSize, Transformed,
-};
+use graphics::{character::CharacterCache, math::Matrix2d, Graphics, ImageSize, Transformed};
 use once_cell::sync::Lazy;
 use rusttype::{Error, Font, GlyphId, Scale};
 use vector2math::*;
@@ -481,7 +479,7 @@ where
 {
     let format = format.into();
     for (pos, line) in glyphs.justify_text(text.as_ref(), rect, format) {
-        draw_text(
+        graphics::text(
             format.color,
             format.font_size,
             &line,

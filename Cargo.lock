@@ -49,7 +49,7 @@ name = "fit_text"
 version = "0.1.0"
 dependencies = [
  "once_cell 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "piston2d-graphics 0.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "piston2d-graphics 0.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rusttype 0.7.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "vector2math 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -145,7 +145,7 @@ dependencies = [
 
 [[package]]
 name = "piston2d-graphics"
-version = "0.33.0"
+version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "interpolation 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -267,7 +267,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum piston-float 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f900be47e312e126cc71d35548e8e31edd3901b92ab82d1c4c4757e6b5526564"
 "checksum piston-texture 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3649b5f9d1ba48d95207976118e9e2ed473c1de36f6f79cc1b7ed5b75b655b61"
 "checksum piston-viewport 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "01abb19b781051290d0837b9294c26d419cc4156907c21ffe86705e219446798"
-"checksum piston2d-graphics 0.33.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8b4064e3231e45d75043390b8b320c32a88ab8765f19930150553e85ee9e47a7"
+"checksum piston2d-graphics 0.32.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8076479779b8191e87331df71426ebcdf7c21b3017cb6d8cb5dd49f0231c0114"
 "checksum read_color 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9f4c8858baa4ad3c8bcc156ae91a0ffe22b76a3975c40c49b4f04c15c6bce0da"
 "checksum redox_syscall 0.1.56 (registry+https://github.com/rust-lang/crates.io-index)" = "2439c63f3f6139d1b57529d16bc3b8bb855230c8efcc5d3a896c8bea7c3b1e84"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"

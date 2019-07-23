@@ -5,15 +5,16 @@ This crate provides an implementation for calculating the positions of text
 fragments to fit text withing a rectangle.
 
 The `graphics` feature, which is on by default, allows the direct rendering of a fitted
-text with the `piston2d-graphics` crate.
+text with the [`piston2d-graphics`](https://docs.rs/piston2d-graphics) crate.
 */
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Mutex};
 
 #[cfg(feature = "graphics")]
 use graphics::{
     character::CharacterCache, math::Matrix2d, text as draw_text, Graphics, ImageSize, Transformed,
 };
+use once_cell::sync::Lazy;
 use rusttype::{Error, Font, GlyphId, Scale};
 use vector2math::*;
 
@@ -73,18 +74,39 @@ impl From<u32> for TextFormat {
     }
 }
 
+static DEFAULT_TEXT_FORMAT: Lazy<Mutex<TextFormat>> = Lazy::new(|| {
+    Mutex::new(TextFormat {
+        font_size: 30,
+        just: Justification::Left,
+        line_spacing: 1.0,
+        first_line_indent: 0,
+        lines_indent: 0,
+        color: [0.0, 0.0, 0.0, 1.0],
+        resize: Resize::NoLarger,
+    })
+});
+
+impl Default for TextFormat {
+    fn default() -> TextFormat {
+        *DEFAULT_TEXT_FORMAT
+            .lock()
+            .expect("fit-text default TextFormat thread panicked")
+    }
+}
+
 impl TextFormat {
     /// Create a default `TextFormat` with the given font size
     pub fn new(font_size: u32) -> TextFormat {
         TextFormat {
             font_size,
-            just: Justification::Left,
-            line_spacing: 1.0,
-            first_line_indent: 0,
-            lines_indent: 0,
-            color: [0.0, 0.0, 0.0, 1.0],
-            resize: Resize::NoLarger,
+            ..Default::default()
         }
+    }
+    /// Use this `TextFormat` as the default
+    pub fn set_as_default(&self) {
+        *DEFAULT_TEXT_FORMAT
+            .lock()
+            .expect("fit-text default TextFormat thread panicked") = *self;
     }
     /// Align the `TextFormat` to the left
     pub fn left(mut self) -> Self {
@@ -414,8 +436,8 @@ where
 ///
 /// Text will be drawn in the given rectangle and use the given format
 #[cfg(feature = "graphics")]
-pub fn justified_text<R, F, C, G>(
-    text: &str,
+pub fn fitted_text<S, R, F, C, G>(
+    text: S,
     rect: R,
     format: F,
     glyphs: &mut C,
@@ -423,6 +445,7 @@ pub fn justified_text<R, F, C, G>(
     graphics: &mut G,
 ) -> Result<(), C::Error>
 where
+    S: AsRef<str>,
     R: Rectangle<Scalar = f64>,
     F: Into<TextFormat>,
     C: CharacterCache,
@@ -430,7 +453,7 @@ where
     G: Graphics<Texture = C::Texture>,
 {
     let format = format.into();
-    for (pos, line) in glyphs.justify_text(text, rect, format) {
+    for (pos, line) in glyphs.justify_text(text.as_ref(), rect, format) {
         draw_text(
             format.color,
             format.font_size,
@@ -486,7 +509,7 @@ where
         S: AsRef<str>,
         R: Rectangle<Scalar = f64>,
     {
-        justified_text(
+        fitted_text(
             text.as_ref(),
             rectangle,
             self.format,

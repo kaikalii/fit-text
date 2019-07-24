@@ -219,21 +219,21 @@ pub trait CharacterWidthCache {
             // Initialize a result line
             let mut sized_line = String::new();
             // Apply the indentation
-            let indent = (0..if first_line {
+            let indent = if first_line {
                 format.first_line_indent
             } else {
                 format.lines_indent
-            })
-                .map(|_| ' ')
-                .collect::<String>();
+            };
+            let indent = (0..indent).map(|_| ' ').collect::<String>();
             sized_line.push_str(&indent);
-            let mut curr_width = self.width(&indent, format.font_size);
+            let indent_width = self.width(&indent, format.font_size);
+            let mut curr_width = indent_width;
             // Iterate through words
             for word in line.split_whitespace() {
                 // Get the word's width
                 let width = self.width(word, format.font_size);
                 // If the word goes past the max width...
-                if !(curr_width + width < max_width || curr_width == 0.0) {
+                if !(curr_width + width < max_width || curr_width == indent_width) {
                     // Pop off the trailing space
                     sized_line.pop();
                     // Push the result line onto the result list
@@ -242,13 +242,12 @@ pub trait CharacterWidthCache {
                     first_line = false;
                     sized_line = String::new();
                     // Apply the indentation
-                    let indent = (0..if first_line {
+                    let indent = if first_line {
                         format.first_line_indent
                     } else {
                         format.lines_indent
-                    })
-                        .map(|_| ' ')
-                        .collect::<String>();
+                    };
+                    let indent = (0..indent).map(|_| ' ').collect::<String>();
                     sized_line.push_str(&indent);
                     curr_width = self.width(&indent, format.font_size);
                 }
@@ -392,6 +391,32 @@ pub trait CharacterWidthCache {
         }
         rect.width()
     }
+    /// Determine the correct text size based on the given `TextFormat`
+    fn ideal_text_size<R, F>(&mut self, text: &str, rect: R, format: F) -> TextFormat
+    where
+        R: Rectangle<Scalar = f64>,
+        F: Into<TextFormat>,
+    {
+        let mut format = format.into();
+        match format.resize {
+            Resize::None => {}
+            Resize::NoLarger => {
+                while format.font_size > 0 && !self.text_fits(text, rect, format) {
+                    format.font_size -= 1;
+                }
+            }
+            Resize::Max => {
+                while format.font_size > 0 && !self.text_fits(text, rect, format) {
+                    format.font_size -= 1;
+                }
+                while self.text_fits(text, rect, format) {
+                    format.font_size += 1;
+                }
+                format.font_size -= 1;
+            }
+        }
+        format
+    }
 }
 
 /// A basic implememntor for `CharacterWidthCache`
@@ -450,7 +475,7 @@ where
 {
     fn char_width(&mut self, character: char, font_size: u32) -> f64 {
         if let Ok(character) = <Self as CharacterCache>::character(self, font_size, character) {
-            character.texture.get_width() as f64
+            character.advance_size.x()
         } else {
             panic!("CharacterWidthCache::character returned Err")
         }
@@ -477,7 +502,7 @@ where
     C::Texture: ImageSize,
     G: Graphics<Texture = C::Texture>,
 {
-    let format = format.into();
+    let format = glyphs.ideal_text_size(text.as_ref(), rect, format);
     for (pos, line) in glyphs.justify_text(text.as_ref(), rect, format) {
         graphics::text(
             format.color,

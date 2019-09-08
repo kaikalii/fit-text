@@ -1,3 +1,6 @@
+[[example]]
+name = 'simple'
+
 [dependencies]
 once_cell = '1.1.0'
 rusttype = '0.8.0'
@@ -10,9 +13,6 @@ version = '0.35.0'
 [dev-dependencies]
 graphics_buffer = '0.7.2'
 
-[[example]]
-name = "simple"
-
 [features]
 default = ['graphics']
 graphics = ['piston2d-graphics']
@@ -24,7 +24,7 @@ categories = [
     'rendering',
 ]
 description = 'Fit text inside a rectangle'
-documentation = 'https://docs.rs/pane/'
+documentation = 'https://docs.rs/fit-text/'
 edition = '2018'
 keywords = [
     'text',

@@ -18,27 +18,42 @@ use vector2math::*;
 
 use crate::color::Color;
 
-/// A horizantal text justification
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Justification {
-    /// Align on the left
-    Left,
-    /// Center align
-    Centered,
-    /// Align on the right
-    Right,
+/// A way of indenting a line
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub enum Indent {
+    /// Indent with a certain number of spaces
+    Space(usize),
+    /// Indent with a number of points
+    Point(f64),
 }
 
-impl Default for Justification {
-    fn default() -> Self {
-        Justification::Left
+impl Indent {
+    /// Get the `Indent`'s width in points
+    pub fn in_points<C>(self, cache: &mut C, font_size: u32) -> f64
+    where
+        C: CharacterWidthCache,
+    {
+        match self {
+            Indent::Space(spaces) => cache.char_width(' ', font_size) * spaces as f64,
+            Indent::Point(points) => points,
+        }
     }
 }
+
+/// A list of positioned objects
+///
+/// `V` usually implements `Vector2`
+pub type PositionedList<V, I> = Vec<(V, I)>;
 
 /// Lines that have starting positions
 ///
 /// `V` usually implements `Vector2`
-pub type PositionedLines<V> = Vec<(V, String)>;
+pub type PositionedLines<V> = PositionedList<V, String>;
+
+/// Lines with metadata that have starting positions
+///
+/// `V` usually implements `Vector2`
+pub type PositionedLinesMeta<V, M> = PositionedList<V, (String, M)>;
 
 /// A way of resizing text in a rectangle
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -64,16 +79,14 @@ impl Default for Resize {
 pub struct TextFormat {
     /// The font size
     pub font_size: u32,
-    /// The horizantal justification
-    pub just: Justification,
     /// The spacing between lines. This should usually be somewhere
     /// between `1.0` and `2.0`, but any scalar is valid
     pub line_spacing: f64,
     /// The number of spaces to indent the first line of a paragraph
-    pub first_line_indent: usize,
+    pub first_line_indent: Indent,
     /// The number of spaces to indent all lines of a paragraph
     /// after the first
-    pub lines_indent: usize,
+    pub lines_indent: Indent,
     /// The color of the text
     pub color: Color,
     /// The resize strategy
@@ -89,11 +102,10 @@ impl From<u32> for TextFormat {
 static DEFAULT_TEXT_FORMAT: Lazy<Mutex<TextFormat>> = Lazy::new(|| {
     Mutex::new(TextFormat {
         font_size: 30,
-        just: Justification::Left,
-        line_spacing: 1.0,
-        first_line_indent: 0,
-        lines_indent: 0,
-        color: [0.0, 0.0, 0.0, 1.0],
+        line_spacing: 1.1,
+        first_line_indent: Indent::Space(0),
+        lines_indent: Indent::Space(0),
+        color: color::WHITE,
         resize: Resize::NoLarger,
     })
 });
@@ -114,36 +126,11 @@ impl TextFormat {
             ..Default::default()
         }
     }
-    /// Use this `TextFormat` as the default
+    /// Use this `TextFormat` as the global default
     pub fn set_as_default(&self) {
         *DEFAULT_TEXT_FORMAT
             .lock()
             .expect("fit-text default TextFormat thread panicked") = *self;
-    }
-    /// Align the `TextFormat` to the left
-    pub fn left(self) -> Self {
-        TextFormat {
-            just: Justification::Left,
-            ..self
-        }
-    }
-    /// Center-align the `TextFormat`
-    pub fn centered(self) -> Self {
-        TextFormat {
-            just: Justification::Centered,
-            ..self
-        }
-    }
-    /// Align the `TextFormat` to the right
-    pub fn right(self) -> Self {
-        TextFormat {
-            just: Justification::Right,
-            ..self
-        }
-    }
-    /// Set the `Justification`
-    pub fn justify(self, just: Justification) -> Self {
-        TextFormat { just, ..self }
     }
     /// Set the font size
     pub fn font_size(self, font_size: u32) -> Self {
@@ -157,14 +144,14 @@ impl TextFormat {
         }
     }
     /// Set the indentation of the first line
-    pub fn first_line_indent(self, first_line_indent: usize) -> Self {
+    pub fn first_line_indent(self, first_line_indent: Indent) -> Self {
         TextFormat {
             first_line_indent,
             ..self
         }
     }
     /// Set the indentation of all lines after the first
-    pub fn lines_indent(self, lines_indent: usize) -> Self {
+    pub fn lines_indent(self, lines_indent: Indent) -> Self {
         TextFormat {
             lines_indent,
             ..self
@@ -198,7 +185,7 @@ impl TextFormat {
 /// In general, determining the width of a character glyph with a given font size
 /// is a non-trivial calculation. Caching a width calculation for each character
 /// and font size ensures that the calculation is only done once for each pair.
-pub trait CharacterWidthCache {
+pub trait CharacterWidthCache: Sized {
     /// Get the width of a character at a font size
     fn char_width(&mut self, character: char, font_size: u32) -> f64;
     /// Get the width of a string at a font_size
@@ -207,15 +194,16 @@ pub trait CharacterWidthCache {
     }
     /// Split a string into a list of lines of text with the given format where no line
     /// is wider than the given max width. Newlines (`\n`) in the string are respected
-    fn format_lines<F>(&mut self, text: &str, max_width: f64, format: F) -> Vec<String>
+    fn format_lines<S, F>(&mut self, text: S, max_width: f64, format: F) -> Vec<String>
     where
+        S: AsRef<str>,
         F: Into<TextFormat>,
     {
         let format = format.into();
         let mut sized_lines = Vec::new();
-        let mut first_line = false;
+        let mut first_line = true;
         // Iterate through lines
-        for line in text.lines() {
+        for line in text.as_ref().lines() {
             // Initialize a result line
             let mut sized_line = String::new();
             // Apply the indentation
@@ -224,16 +212,17 @@ pub trait CharacterWidthCache {
             } else {
                 format.lines_indent
             };
-            let indent = (0..indent).map(|_| ' ').collect::<String>();
-            sized_line.push_str(&indent);
-            let indent_width = self.width(&indent, format.font_size);
+            let indent_width = indent.in_points(self, format.font_size);
             let mut curr_width = indent_width;
             // Iterate through words
             for word in line.split_whitespace() {
                 // Get the word's width
                 let width = self.width(word, format.font_size);
                 // If the word goes past the max width...
-                if !(curr_width + width < max_width || curr_width == indent_width) {
+                let fits_here = curr_width + width < max_width;
+                let first_word_on_line = (curr_width - indent_width).abs() < f64::EPSILON;
+                let fits_at_all = width < max_width;
+                if !(fits_here || first_word_on_line && !fits_at_all) {
                     // Pop off the trailing space
                     sized_line.pop();
                     // Push the result line onto the result list
@@ -247,9 +236,9 @@ pub trait CharacterWidthCache {
                     } else {
                         format.lines_indent
                     };
-                    let indent = (0..indent).map(|_| ' ').collect::<String>();
-                    sized_line.push_str(&indent);
-                    curr_width = self.width(&indent, format.font_size);
+
+                    let indent_width = indent.in_points(self, format.font_size);
+                    curr_width = indent_width;
                 }
                 // Push the word onto the result line
                 sized_line.push_str(word);
@@ -265,8 +254,9 @@ pub trait CharacterWidthCache {
     }
     /// Get the width of the widest line after performing
     /// the calculation of `CharacterWidthCache::format_lines`
-    fn max_line_width<F>(&mut self, text: &str, max_width: f64, format: F) -> f64
+    fn max_line_width<S, F>(&mut self, text: S, max_width: f64, format: F) -> f64
     where
+        S: AsRef<str>,
         F: Into<TextFormat>,
     {
         let format = format.into();
@@ -279,8 +269,9 @@ pub trait CharacterWidthCache {
     }
     /// Calculate a set of positioned lines of text with the given format
     /// that fit within the given rectangle
-    fn justify_text<R, F>(&mut self, text: &str, rect: R, format: F) -> PositionedLines<R::Vector>
+    fn justify_text<S, R, F>(&mut self, text: S, rect: R, format: F) -> PositionedLines<R::Vector>
     where
+        S: AsRef<str>,
         R: Rectangle<Scalar = f64>,
         F: Into<TextFormat>,
     {
@@ -290,18 +281,67 @@ pub trait CharacterWidthCache {
             .enumerate()
             .map(|(i, line)| {
                 let y_offset = rect.top()
-                    + format.font_size as f64
-                    + i as f64 * format.font_size as f64 * format.line_spacing;
-                use self::Justification::*;
-                let line_width = self.width(&line, format.font_size);
-                let x_offset = match format.just {
-                    Left => rect.left(),
-                    Centered => rect.center().x() - line_width / 2.0,
-                    Right => rect.right() - line_width,
-                };
+                    + f64::from(format.font_size)
+                    + i as f64 * f64::from(format.font_size) * format.line_spacing;
+                let x_offset = rect.left()
+                    + if i == 0 {
+                        format.first_line_indent.in_points(self, format.font_size)
+                    } else {
+                        format.lines_indent.in_points(self, format.font_size)
+                    };
                 (R::Vector::new(x_offset, y_offset), line)
             })
             .collect()
+    }
+    /// Calculate a set of positioned text and metadata lines with the given format
+    /// that fit within the given rectangle
+    ///
+    /// This is useful when you have multiple fragments of text each with some
+    /// associated metadata, such as a color. Fragments that are split between
+    /// lines will have their metadata cloned
+    fn justify_meta_fragments<I, M, S, R, F>(
+        &mut self,
+        fragments: I,
+        rect: R,
+        format: F,
+    ) -> PositionedLinesMeta<R::Vector, M>
+    where
+        I: IntoIterator<Item = (S, M)>,
+        M: Clone,
+        S: AsRef<str>,
+        R: Rectangle<Scalar = f64>,
+        F: Into<TextFormat>,
+    {
+        let format = format.into();
+        let mut plm = Vec::new();
+        let mut vert = 0.0;
+        let space_width = self.char_width(' ', format.font_size);
+        let mut horiz = format.first_line_indent.in_points(self, format.font_size);
+        // Iterate through fragments
+        for (text, meta) in fragments {
+            let sub_rect = R::new(
+                R::Vector::new(rect.left(), rect.top() + vert),
+                R::Vector::new(rect.width(), rect.height() - vert),
+            );
+            let sub_format = format.first_line_indent(Indent::Point(horiz));
+            let positioned_lines = self.justify_text(text, sub_rect, sub_format);
+            horiz = match positioned_lines.len() {
+                0 => 0.0,
+                1 => horiz + self.width(&positioned_lines[0].1, format.font_size),
+                _ => self.width(&positioned_lines.last().unwrap().1, format.font_size),
+            } + space_width;
+            if !positioned_lines.is_empty() {
+                vert += (positioned_lines.len() - 1) as f64
+                    * f64::from(format.font_size)
+                    * format.line_spacing;
+            }
+            plm.extend(
+                positioned_lines
+                    .into_iter()
+                    .map(|(v, l)| (v, (l, meta.clone()))),
+            );
+        }
+        plm
     }
     /// Check if text with the given format fits within a rectangle's width
     fn text_fits_horizontal<R, F>(&mut self, text: &str, rect: R, format: F) -> bool
@@ -323,8 +363,8 @@ pub trait CharacterWidthCache {
             return true;
         }
         let last_line_y = rect.top()
-            + format.font_size as f64
-            + (lines.len() - 1) as f64 * format.font_size as f64 * format.line_spacing;
+            + f64::from(format.font_size)
+            + (lines.len() - 1) as f64 * f64::from(format.font_size) * format.line_spacing;
         last_line_y < rect.bottom()
     }
     /// Check if text with the given format fits within a rectangle
@@ -419,29 +459,23 @@ pub trait CharacterWidthCache {
     }
 }
 
-/// A basic implememntor for `CharacterWidthCache`
+/// A basic implementor for `CharacterWidthCache`
 #[derive(Clone)]
-pub struct BasicGlyphs<'f, S = f64>
-where
-    S: Scalar,
-{
-    widths: HashMap<(u32, char), S>,
+pub struct BasicGlyphs<'f> {
+    widths: HashMap<(u32, char), f64>,
     font: Font<'f>,
 }
 
-impl<'f, S> BasicGlyphs<'f, S>
-where
-    S: Scalar,
-{
+impl<'f> BasicGlyphs<'f> {
     /// Loads a `Glyphs` from an array of font data.
-    pub fn from_bytes(bytes: &'f [u8]) -> Result<BasicGlyphs<'f, S>, Error> {
+    pub fn from_bytes(bytes: &'f [u8]) -> Result<BasicGlyphs<'f>, Error> {
         Ok(BasicGlyphs {
             widths: HashMap::new(),
             font: Font::from_bytes(bytes)?,
         })
     }
     /// Loads a `Glyphs` from a `Font`.
-    pub fn from_font(font: Font<'f>) -> BasicGlyphs<'f, S> {
+    pub fn from_font(font: Font<'f>) -> BasicGlyphs<'f> {
         BasicGlyphs {
             widths: HashMap::new(),
             font,
@@ -516,6 +550,43 @@ where
     Ok(())
 }
 
+/// Draw justified, colored text fragments to something using the `piston2d-graphics` crate
+///
+/// Text will be drawn in the given rectangle and use the given format
+#[cfg(feature = "graphics")]
+pub fn fitted_colored_text<I, S, R, F, C, G>(
+    fragments: I,
+    rect: R,
+    format: F,
+    glyphs: &mut C,
+    transform: Matrix2d,
+    graphics: &mut G,
+) -> Result<(), C::Error>
+where
+    I: IntoIterator<Item = (S, Color)>,
+    S: AsRef<str>,
+    R: Rectangle<Scalar = f64>,
+    F: Into<TextFormat>,
+    C: CharacterCache,
+    C::Texture: ImageSize,
+    G: Graphics<Texture = C::Texture>,
+{
+    let fragments: Vec<_> = fragments.into_iter().collect();
+    let whole_string: String = fragments.iter().map(|(s, _)| s.as_ref()).collect();
+    let format = glyphs.ideal_text_size(whole_string.as_ref(), rect, format);
+    for (pos, (fragment, color)) in glyphs.justify_meta_fragments(fragments, rect, format) {
+        graphics::text(
+            color,
+            format.font_size,
+            &fragment,
+            glyphs,
+            transform.trans(pos.x(), pos.y()),
+            graphics,
+        )?;
+    }
+    Ok(())
+}
+
 /// A struct for writing text into multiple rectangles
 #[cfg(feature = "graphics")]
 pub struct Scribe<'a, C, G> {
@@ -568,11 +639,27 @@ where
             self.graphics,
         )
     }
+    /// Write some colored text fragments into a rectangle with the `Scribe`
+    pub fn write_colored<I, S, R>(&mut self, fragments: I, rectangle: R) -> Result<(), C::Error>
+    where
+        I: IntoIterator<Item = (S, Color)>,
+        S: AsRef<str>,
+        R: Rectangle<Scalar = f64>,
+    {
+        fitted_colored_text(
+            fragments,
+            rectangle,
+            self.format,
+            self.glyphs,
+            self.transform,
+            self.graphics,
+        )
+    }
 }
 
 /// Defines serveral color constants
 pub mod color {
-    /// A 4-channel color
+    /// An RGBA color
     pub type Color = [f32; 4];
 
     /// Red

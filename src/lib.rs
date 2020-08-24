@@ -13,7 +13,7 @@ use std::{collections::HashMap, sync::Mutex};
 #[cfg(feature = "graphics")]
 use graphics::{character::CharacterCache, math::Matrix2d, Graphics, ImageSize, Transformed};
 use once_cell::sync::Lazy;
-use rusttype::{Error, Font, GlyphId, Scale};
+use rusttype::{Font, GlyphId, Scale};
 use vector2math::*;
 
 use crate::color::Color;
@@ -468,10 +468,10 @@ pub struct BasicGlyphs<'f> {
 
 impl<'f> BasicGlyphs<'f> {
     /// Loads a `Glyphs` from an array of font data.
-    pub fn from_bytes(bytes: &'f [u8]) -> Result<BasicGlyphs<'f>, Error> {
-        Ok(BasicGlyphs {
+    pub fn from_bytes(bytes: &'f [u8]) -> Option<BasicGlyphs<'f>> {
+        Some(BasicGlyphs {
             widths: HashMap::new(),
-            font: Font::from_bytes(bytes)?,
+            font: Font::try_from_bytes(bytes)?,
         })
     }
     /// Loads a `Glyphs` from a `Font`.
@@ -492,7 +492,7 @@ impl<'f> CharacterWidthCache for BasicGlyphs<'f> {
             .or_insert_with(|| {
                 let scale = Scale::uniform(font_size as f32);
                 let glyph = font.glyph(character).scaled(scale);
-                let glyph = if glyph.id() == GlyphId(0) && glyph.shape().is_none() {
+                let glyph = if glyph.id() == GlyphId(0) && glyph.exact_bounding_box().is_none() {
                     font.glyph('\u{FFFD}').scaled(scale)
                 } else {
                     glyph

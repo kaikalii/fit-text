@@ -272,7 +272,8 @@ pub trait CharacterWidthCache: Sized {
     fn justify_text<S, R, F>(&mut self, text: S, rect: R, format: F) -> PositionedLines<R::Vector>
     where
         S: AsRef<str>,
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
         F: Into<TextFormat>,
     {
         let format = format.into();
@@ -309,7 +310,8 @@ pub trait CharacterWidthCache: Sized {
         I: IntoIterator<Item = (S, M)>,
         M: Clone,
         S: AsRef<str>,
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
         F: Into<TextFormat>,
     {
         let format = format.into();
@@ -346,7 +348,8 @@ pub trait CharacterWidthCache: Sized {
     /// Check if text with the given format fits within a rectangle's width
     fn text_fits_horizontal<R, F>(&mut self, text: &str, rect: R, format: F) -> bool
     where
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
         F: Into<TextFormat>,
     {
         self.max_line_width(text, rect.width(), format) < rect.width()
@@ -354,7 +357,8 @@ pub trait CharacterWidthCache: Sized {
     /// Check if text with the given format fits within a rectangle's height
     fn text_fits_vertical<R, F>(&mut self, text: &str, rect: R, format: F) -> bool
     where
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
         F: Into<TextFormat>,
     {
         let format = format.into();
@@ -370,7 +374,8 @@ pub trait CharacterWidthCache: Sized {
     /// Check if text with the given format fits within a rectangle
     fn text_fits<R, F>(&mut self, text: &str, rect: R, format: F) -> bool
     where
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
         F: Into<TextFormat>,
     {
         let format = format.into();
@@ -380,7 +385,8 @@ pub trait CharacterWidthCache: Sized {
     /// that will still allow the text to fit within a rectangle
     fn fit_max_font_size<R, F>(&mut self, text: &str, rect: R, format: F) -> u32
     where
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
         F: Into<TextFormat>,
     {
         let mut format = format.into();
@@ -397,7 +403,8 @@ pub trait CharacterWidthCache: Sized {
     /// more accurate results, but will take longer to computer.
     fn fit_min_height<R, F>(&mut self, text: &str, mut rect: R, format: F, delta: f64) -> f64
     where
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
         F: Into<TextFormat>,
     {
         let format = format.into();
@@ -418,7 +425,8 @@ pub trait CharacterWidthCache: Sized {
     /// more accurate results, but will take longer to computer.
     fn fit_min_width<R, F>(&mut self, text: &str, mut rect: R, format: F, delta: f64) -> f64
     where
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
         F: Into<TextFormat>,
     {
         let format = format.into();
@@ -434,7 +442,8 @@ pub trait CharacterWidthCache: Sized {
     /// Determine the correct text size based on the given `TextFormat`
     fn ideal_text_size<R, F>(&mut self, text: &str, rect: R, format: F) -> TextFormat
     where
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
         F: Into<TextFormat>,
     {
         let mut format = format.into();
@@ -530,7 +539,8 @@ pub fn fitted_text<S, R, F, C, G>(
 ) -> Result<(), C::Error>
 where
     S: AsRef<str>,
-    R: Rectangle<Scalar = f64>,
+    R: Rectangle,
+    R::Vector: Vector2<Scalar = f64>,
     F: Into<TextFormat>,
     C: CharacterCache,
     C::Texture: ImageSize,
@@ -565,7 +575,8 @@ pub fn fitted_colored_text<I, S, R, F, C, G>(
 where
     I: IntoIterator<Item = (S, Color)>,
     S: AsRef<str>,
-    R: Rectangle<Scalar = f64>,
+    R: Rectangle,
+    R::Vector: Vector2<Scalar = f64>,
     F: Into<TextFormat>,
     C: CharacterCache,
     C::Texture: ImageSize,
@@ -628,7 +639,8 @@ where
     pub fn write<S, R>(&mut self, text: S, rectangle: R) -> Result<(), C::Error>
     where
         S: AsRef<str>,
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
     {
         fitted_text(
             text.as_ref(),
@@ -644,7 +656,8 @@ where
     where
         I: IntoIterator<Item = (S, Color)>,
         S: AsRef<str>,
-        R: Rectangle<Scalar = f64>,
+        R: Rectangle,
+        R::Vector: Vector2<Scalar = f64>,
     {
         fitted_colored_text(
             fragments,

@@ -145,7 +145,7 @@ checksum = "5527cfe0d098f36e3f8839852688e63c8fff1c90b2b405aef730615f9a7bcf7b"
 
 [[package]]
 name = "fit_text"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "graphics_buffer",
  "once_cell",
@@ -452,9 +452,9 @@ dependencies = [
 
 [[package]]
 name = "vector2math"
-version = "0.8.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3a416812f4dfcb729567220120088bca605a79977dafa934828c53862267825"
+checksum = "9e6054381a6ba6967e4657f54e9ece1c8425691aab130be5c867b1ef5081e120"
 
 [[package]]
 name = "weezl"

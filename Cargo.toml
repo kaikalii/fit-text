@@ -8,10 +8,10 @@ vector2math = '0.8.0'
 
 [dependencies.piston2d-graphics]
 optional = true
-version = '0.36.0'
+version = '0.40.0'
 
 [dev-dependencies]
-graphics_buffer = '0.7.4'
+graphics_buffer = '0.7.7'
 
 [features]
 default = ['graphics']
@@ -28,4 +28,4 @@ license = 'MIT'
 name = 'fit_text'
 readme = 'readme.md'
 repository = 'https://github.com/kaikalii/fit-text'
-version = '0.3.0'
+version = '0.3.1'

@@ -145,11 +145,11 @@ checksum = "5527cfe0d098f36e3f8839852688e63c8fff1c90b2b405aef730615f9a7bcf7b"
 
 [[package]]
 name = "fit_text"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "graphics_buffer",
  "once_cell",
- "piston2d-graphics",
+ "piston2d-graphics 0.41.0",
  "rusttype",
  "vector2math",
 ]
@@ -179,7 +179,7 @@ dependencies = [
  "bit-vec",
  "image",
  "piston-texture",
- "piston2d-graphics",
+ "piston2d-graphics 0.40.0",
  "png",
  "rayon",
 ]
@@ -356,6 +356,19 @@ dependencies = [
  "piston-viewport",
  "read_color",
  "rusttype",
+ "vecmath",
+]
+
+[[package]]
+name = "piston2d-graphics"
+version = "0.41.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce4a4b60559223e6dae56520d222c1fb27ee3c9662174d5fa657e2169ec38c35"
+dependencies = [
+ "interpolation",
+ "piston-texture",
+ "piston-viewport",
+ "read_color",
  "vecmath",
 ]
 
